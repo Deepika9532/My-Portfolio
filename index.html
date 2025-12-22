@@ -13,7 +13,6 @@
     <meta property="og:description" content="Personal portfolio showcasing web, Flutter, and backend projects." />
     <meta property="og:type" content="website" />
     <meta property="og:url" content="https://lakshya-portfolio.netlify.app" />
-    <meta property="og:image" content="https://lakshya-portfolio.netlify.app/assets/preview.png" />
 
     <title>Lakshya Deepika P. | Software Developer</title>
     
@@ -436,7 +435,9 @@
                     I'm always open to discussing new projects, creative ideas, or opportunities to be part of your vision.
                 </p>
                 
-                <form id="contactForm" class="contact-form" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+                <form id="contactForm" class="contact-form" name="contact" method="POST" data-netlify="true">
+                    <input type="hidden" name="form-name" value="contact" />
+                    
                     <div class="form-group">
                         <input type="text" name="name" placeholder="Your Name *" required />
                     </div>
@@ -486,5 +487,4 @@
     <script src="script.js"></script>
 
 </body>
-
 </html>
