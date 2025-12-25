@@ -2,8 +2,8 @@
 // INITIALIZATION
 // ===================================
 
-// Set current year in footer
 document.addEventListener('DOMContentLoaded', () => {
+    // Set current year in footer
     const yearElement = document.getElementById("current-year");
     if (yearElement) {
         yearElement.textContent = new Date().getFullYear();
@@ -20,6 +20,9 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Initialize typing effect
     initializeTypingEffect();
+    
+    // Initialize smooth scroll
+    initializeSmoothScroll();
 });
 
 // ===================================
@@ -27,14 +30,32 @@ document.addEventListener('DOMContentLoaded', () => {
 // ===================================
 
 function toggleTheme() {
-    document.body.classList.toggle("dark");
-    const isDark = document.body.classList.contains("dark");
+    document.body.classList.toggle("dark-mode");
+    const isDark = document.body.classList.contains("dark-mode");
+    
+    // Update all dark mode buttons
+    const buttons = document.querySelectorAll('.btn');
+    buttons.forEach(btn => {
+        if (btn.textContent.includes('Dark Mode') || btn.textContent.includes('Light Mode')) {
+            btn.textContent = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+        }
+    });
+    
+    // Save preference
     localStorage.setItem("theme", isDark ? "dark" : "light");
 }
 
 function loadTheme() {
     if (localStorage.getItem("theme") === "dark") {
-        document.body.classList.add("dark");
+        document.body.classList.add("dark-mode");
+        
+        // Update button text if it exists
+        const buttons = document.querySelectorAll('.btn');
+        buttons.forEach(btn => {
+            if (btn.textContent.includes('Dark Mode')) {
+                btn.textContent = '☀️ Light Mode';
+            }
+        });
     }
 }
 
@@ -42,11 +63,10 @@ function loadTheme() {
 // SCROLL FUNCTIONALITY
 // ===================================
 
-// Scroll progress bar
+// Scroll progress bar and FAB visibility
 window.addEventListener('scroll', () => {
     updateScrollProgress();
     toggleFABVisibility();
-    updateParallaxEffect();
 });
 
 function updateScrollProgress() {
@@ -79,34 +99,21 @@ function scrollToTop() {
 }
 
 // ===================================
-// PARALLAX EFFECT
-// ===================================
-
-function updateParallaxEffect() {
-    const scrolled = window.scrollY;
-    const header = document.querySelector('header');
-    
-    if (header) {
-        header.style.transform = `translateY(${scrolled * 0.3}px)`;
-        header.style.opacity = 1 - (scrolled / 500);
-    }
-}
-
-// ===================================
 // REVEAL ANIMATIONS
 // ===================================
 
 function initializeAnimations() {
-    const reveals = document.querySelectorAll(".reveal, .skill-category");
+    const reveals = document.querySelectorAll(".reveal, section");
     
     const observer = new IntersectionObserver(entries => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                entry.target.classList.add("active");
+                entry.target.classList.add("visible");
             }
         });
     }, { 
-        threshold: 0.15 
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
     });
 
     reveals.forEach(element => observer.observe(element));
@@ -116,29 +123,24 @@ function initializeAnimations() {
 // SMOOTH SCROLL FOR NAVIGATION
 // ===================================
 
-document.addEventListener('DOMContentLoaded', () => {
-    const navLinks = document.querySelectorAll('nav a');
+function initializeSmoothScroll() {
+    const navLinks = document.querySelectorAll('nav a[href^="#"]');
     
     navLinks.forEach(anchor => {
         anchor.addEventListener('click', function (e) {
-            const href = this.getAttribute('href');
+            e.preventDefault();
+            const targetId = this.getAttribute('href');
+            const targetSection = document.querySelector(targetId);
             
-            // Only prevent default for internal links (starting with #)
-            if (href && href.startsWith('#')) {
-                e.preventDefault();
-                const targetId = href;
-                const targetSection = document.querySelector(targetId);
-                
-                if (targetSection) {
-                    targetSection.scrollIntoView({ 
-                        behavior: 'smooth',
-                        block: 'start'
-                    });
-                }
+            if (targetSection) {
+                targetSection.scrollIntoView({ 
+                    behavior: 'smooth',
+                    block: 'start'
+                });
             }
         });
     });
-});
+}
 
 // ===================================
 // FORM HANDLING
@@ -149,12 +151,13 @@ function initializeFormHandling() {
     const successMessage = document.getElementById('successMessage');
     
     if (form && successMessage) {
+        // Handle form submission
         form.addEventListener('submit', function(e) {
-            // Allow form to submit naturally to Formspree
-            // Show success message after a brief delay
+            // For Netlify forms, we'll show the success message
+            // The actual form submission is handled by Netlify
+            // Reset form after submission
             setTimeout(() => {
                 successMessage.classList.add('show');
-                form.reset();
                 
                 // Hide success message after 5 seconds
                 setTimeout(() => {
@@ -173,15 +176,26 @@ function initializeTypingEffect() {
     const tagline = document.querySelector('.typing-effect');
     
     if (tagline) {
-        const text = tagline.textContent;
+        const originalText = tagline.getAttribute('data-text') || tagline.textContent;
         tagline.textContent = '';
+        tagline.style.borderRight = '2px solid var(--primary)';
         let i = 0;
         
         function typeWriter() {
-            if (i < text.length) {
-                tagline.textContent += text.charAt(i);
+            if (i < originalText.length) {
+                tagline.textContent += originalText.charAt(i);
                 i++;
                 setTimeout(typeWriter, 100);
+            } else {
+                // Blinking cursor effect
+                setInterval(() => {
+                    if (tagline.style.borderRight) {
+                        tagline.style.borderRight = 
+                            tagline.style.borderRight.includes('transparent') 
+                            ? '2px solid var(--primary)' 
+                            : '2px solid transparent';
+                    }
+                }, 500);
             }
         }
         
@@ -215,6 +229,28 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ===================================
+// ACCESSIBILITY ENHANCEMENTS
+// ===================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    const fab = document.querySelector('.fab');
+    
+    if (fab) {
+        fab.setAttribute('role', 'button');
+        fab.setAttribute('aria-label', 'Scroll to top');
+        fab.setAttribute('tabindex', '0');
+        
+        // Allow Enter key to trigger scroll to top
+        fab.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                scrollToTop();
+            }
+        });
+    }
+});
+
+// ===================================
 // UTILITY FUNCTIONS
 // ===================================
 
@@ -235,59 +271,15 @@ function debounce(func, wait) {
 const optimizedScroll = debounce(() => {
     updateScrollProgress();
     toggleFABVisibility();
-    updateParallaxEffect();
 }, 10);
 
 window.addEventListener('scroll', optimizedScroll);
 
 // ===================================
-// PREVENT LAYOUT SHIFT
-// ===================================
-
-// Ensure smooth page load
-window.addEventListener('load', () => {
-    document.body.style.opacity = '1';
-});
-
-// ===================================
-// ACCESSIBILITY ENHANCEMENTS
-// ===================================
-
-// Add keyboard navigation for FAB
-document.addEventListener('DOMContentLoaded', () => {
-    const fab = document.querySelector('.fab');
-    
-    if (fab) {
-        fab.setAttribute('role', 'button');
-        fab.setAttribute('aria-label', 'Scroll to top');
-        fab.setAttribute('tabindex', '0');
-        
-        // Allow Enter key to trigger scroll to top
-        fab.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
-                e.preventDefault();
-                scrollToTop();
-            }
-        });
-    }
-});
-
-// ===================================
-// PERFORMANCE MONITORING (Optional)
-// ===================================
-
-// Log page load performance (can be removed in production)
-window.addEventListener('load', () => {
-    const perfData = window.performance.timing;
-    const pageLoadTime = perfData.loadEventEnd - perfData.navigationStart;
-    console.log(`Page load time: ${pageLoadTime}ms`);
-});
-
-// ===================================
 // ERROR HANDLING
 // ===================================
 
-// Global error handler for debugging
+// Global error handler
 window.addEventListener('error', (e) => {
     console.error('An error occurred:', e.message);
 });
